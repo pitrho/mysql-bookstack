@@ -1,6 +1,42 @@
-# 
-#FROM pitrho/docker-mysql:5.6-2.1.0
-#MAINTAINER pitrho
+FROM phusion/baseimage:0.9.17
+MAINTAINER pitrho
 
-#WORKDIR /root/
-#ENTRYPOINT ["/sbin/my_init"]
+ENV DEBIAN_FRONTEND noninteractive
+
+
+RUN apt-get update && \
+    apt-get -yq install mysql-server-%%MYSQL_VERSION%% pwgen awscli && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm /etc/mysql/conf.d/mysqld_safe_syslog.cnf && \
+    if [ ! -f /usr/share/mysql/my-default.cnf ] ; then cp /etc/mysql/my.cnf /usr/share/mysql/my-default.cnf; fi && \
+    mysql_install_db > /dev/null 2>&1 && \
+    touch /var/lib/mysql/.EMPTY_DB
+
+# Add MySQL configuration
+# my-standard or my-lowmem are renamed to my.cnf in the run script based
+# on user's setting for "LOW_MEMORY_MODE". Defaults to my-standard.
+ADD my-lowmem.cnf /etc/mysql/conf.d/my-lowmem.cnf
+ADD my-standard.cnf /etc/mysql/conf.d/my-standard.cnf
+ADD mysqld_charset.cnf /etc/mysql/conf.d/mysqld_charset.cnf
+
+# Add the service scripts
+RUN mkdir /etc/service/mysql
+COPY run.sh /etc/service/mysql/run
+
+# Add the backup-related scripts
+COPY enable_backups.sh /enable_backups.sh
+COPY backup_public.sh /backup_public.sh
+
+ENV MYSQL_USER=admin \
+    MYSQL_PASS=**Random** \
+    ON_CREATE_DB=**False** \
+    REPLICATION_MASTER=**False** \
+    REPLICATION_SLAVE=**False** \
+    REPLICATION_USER=replica \
+    REPLICATION_PASS=replica \
+    MAX_BACKUPS=30
+
+EXPOSE 3306
+
+# Use baseimage-docker's init system.
+CMD ["/sbin/my_init"]

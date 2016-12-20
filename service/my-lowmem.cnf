@@ -1,0 +1,13 @@
+[mysqld]
+bind-address=0.0.0.0
+# http://www.percona.com/blog/2008/05/31/dns-achilles-heel-mysql-installation/
+skip_name_resolve
+#server-id
+#log-bin
+innodb_buffer_pool_size=10M
+thread_cache_size=1
+key_buffer=8M
+max_connections=2
+query_cache_size=8M
+query_cache_limit=512K
+thread_stack=128K

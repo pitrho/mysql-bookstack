@@ -1,0 +1,4 @@
+db:
+  image: pitrho/mysql:latest
+  environment:
+    MYSQL_PASS: "**ChangeMe**"

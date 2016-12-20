@@ -1,32 +1,42 @@
 #!/bin/bash
 
+MYSQL_VERSION="5.6"
 IMAGE_TAG="pitrho/mysql-bookstack"
 
 # Custom die function.
+#
 die() { echo >&2 -e "\nRUN ERROR: $@\n"; exit 1; }
 
 # Parse the command line flags.
-while getopts "t:" opt; do
+#
+while getopts "v:t:" opt; do
   case $opt in
     t)
       IMAGE_TAG=${OPTARG}
       ;;
+
+    v)
+      MYSQL_VERSION=${OPTARG}
+      ;;
+
     \?)
       die "Invalid option: -$OPTARG"
       ;;
   esac
 done
 
-# Create the build directory
+[ $MYSQL_VERSION != "5.5" -a $MYSQL_VERSION != "5.6" ] && ( echo "Only MySQL 5.5 and 5.6 are supported." && exit 1; )
+
+# Crete the build directory
 rm -rf build
 mkdir build
 
-cp Dockerfile.tmpl build/Dockerfile
+cp backup/* build/
+cp service/* build/
 
-cp backup.sh backup_public.sh backup_recovery.sh enable_backups.sh build/
+# Copy docker file, and override the MYSQL_VERSION string
+sed 's/%%MYSQL_VERSION%%/'"$MYSQL_VERSION"'/g' Dockerfile.tmpl > build/Dockerfile
 
-# build the container image
 docker build -t="${IMAGE_TAG}" build/
 
-# clean the build
 rm -rf build
